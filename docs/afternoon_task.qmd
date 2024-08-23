@@ -1,0 +1,83 @@
+---
+title: "afternoon task"
+author: "kimmy wong"
+format: html
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+```{r}
+library(here)
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+ice_cover_duration <- read_csv(here("data", "ntl33_v7.csv"), na = ("-999"))
+meteorological_data <- read_csv(here("data", "ntl20_v6.csv"))
+```
+
+```{r}
+ggplot(ice_cover_duration, aes(x = lakeid, y = ice_duration)) +
+  geom_jitter() +
+  geom_boxplot(outliers = FALSE)
+```
+
+```{r}
+ice_mean <- ice_cover_duration %>% 
+  group_by(year4) %>% 
+  summarise(mean_ice_cover = mean(ice_duration, na.rm = TRUE))
+```
+
+
+```{r}
+#| fig-cap: "Between the 1850's and the 2000's, there is a downwards trend, but it has seem to stabilized."
+ggplot(ice_mean, aes(x = year4, y = mean_ice_cover)) +
+  geom_line()
+```
+
+```{r}
+mean_air_temps <- meteorological_data %>% 
+  filter(month %in% c(12, 1, 2)) %>% 
+  group_by(year4) %>% 
+  summarise(mean_air_temp = mean(ave_air_temp_adjusted))
+```
+
+
+```{r}
+#| fig-cap: "Between the 1850's and the 2000's, there is a upwards trend, but it has seem to stabilized."
+ggplot(mean_air_temps, aes(x = year4, y = mean_air_temp)) +
+  geom_line()
+```
+
+```{r}
+mean_ice_cover_temps <- full_join(mean_air_temps, ice_mean, by = "year4")
+```
+
+```{r}
+#| fig-cap: "The relationship between mean air temperature and mean ice cover duration is inverse. Generally, the higher the temperature is, the less duration of ice cover ."
+ggplot(mean_ice_cover_temps, aes(x = mean_air_temp, y = mean_ice_cover)) +
+  geom_point()
+```
+
+```{r}
+ice_cover_modern <- ice_cover_duration %>% 
+  filter(year4 >= 1970) %>% 
+  mutate(ice_off = ymd(ice_off)) %>% 
+  mutate(day_of_year = yday(ice_off))
+```
+
+```{r}
+#| fig-cap: "Generally, over time, the day of the year that the ice melts is getting sooner."
+ggplot(ice_cover_modern, aes(year4, day_of_year)) +
+  geom_line() + 
+  facet_wrap(~lakeid)
+```
+
+
+
+
+
+
